@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.py[cod]
+.cache/
+results/
+fine_tuned_distilbert_imdb/
+generated_city.png
+content_image.png
+content_audio.mp3
+
