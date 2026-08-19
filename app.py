@@ -1,25 +1,42 @@
-"""Experiment 1: text generation using GPT-2."""
+"""Experiment 12: deploy a summarizer with Gradio and evaluate it with ROUGE."""
 
-from transformers import pipeline, set_seed
+import os
+
+import evaluate
+import gradio as gr
+from transformers import pipeline
+
+
+SUMMARIZER = pipeline("summarization", model="facebook/bart-large-cnn")
+
+
+def summarize_text(input_text: str) -> str:
+    result = SUMMARIZER(input_text, max_length=45, min_length=15, do_sample=False)
+    return result[0]["summary_text"]
+
+
+def evaluate_example() -> None:
+    rouge = evaluate.load("rouge")
+    scores = rouge.compute(
+        predictions=["AI models generate new content such as text and images."],
+        references=[
+            "Generative AI models can produce new content including text and images."
+        ],
+    )
+    print("ROUGE evaluation scores:", scores)
 
 
 def main() -> None:
-    generator = pipeline("text-generation", model="gpt2")
-    set_seed(42)
-    prompt = "Artificial Intelligence will transform the future of"
-    outputs = generator(
-        prompt,
-        max_length=60,
-        num_return_sequences=2,
-        temperature=0.8,
-        top_k=50,
-        top_p=0.95,
-        do_sample=True,
-        pad_token_id=generator.tokenizer.eos_token_id,
+    evaluate_example()
+    demo = gr.Interface(
+        fn=summarize_text,
+        inputs=gr.Textbox(lines=8, label="Enter text to summarize"),
+        outputs=gr.Textbox(label="Generated summary"),
+        title="GenAI Text Summarizer",
+        description="A cloud-deployable Generative AI summarization app.",
     )
-    for index, output in enumerate(outputs, 1):
-        print(f"--- Generated Text {index} ---")
-        print(output["generated_text"], end="\n\n")
+    share = os.getenv("GRADIO_SHARE", "false").lower() == "true"
+    demo.launch(share=share)
 
 
 if __name__ == "__main__":
